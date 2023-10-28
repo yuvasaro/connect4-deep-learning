@@ -1,6 +1,7 @@
 """The Connect 4 game."""
 
 from board import Board
+from constants import P1, P2, TIE, ONGOING
 
 
 class Game:
@@ -9,50 +10,14 @@ class Game:
     def __init__(self):
         "Creates a Connect 4 game instance."
         self.board = Board()
-        self.turn = self.P1 # Player 1's turn
-
-    @property
-    def P1(self):
-        """Player 1.
-
-        Returns:
-            int: 1
-        """
-        return 1
-    
-    @property
-    def P2(self):
-        """Player 2.
-
-        Returns:
-            int: 2
-        """
-        return 2
-    
-    @property
-    def TIE(self):
-        """Tie game.
-        
-        Returns:
-            int: 3
-        """
-        return 3
-    
-    @property
-    def ONGOING(self):
-        """Game is still going on.
-
-        Returns:
-            int: 0
-        """
-        return 0
+        self.turn = P1 # Player 1's turn
 
     def toggle_turn(self):
         """Toggles whose turn it is."""
-        if self.turn == self.P1:
-            self.turn = self.P2
+        if self.turn == P1:
+            self.turn = P2
         else:
-            self.turn = self.P1
+            self.turn = P1
 
     def move(self, player, column):
         """Places a coin on the board for the given player.
@@ -88,6 +53,6 @@ class Game:
             return self.turn
         
         if self.board.check_board_full():
-            return self.TIE
+            return TIE
         
-        return self.ONGOING
+        return ONGOING

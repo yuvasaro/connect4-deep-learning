@@ -3,21 +3,19 @@
 import numpy as np
 from scipy.signal import convolve2d
 
+from constants import M, N, P1, SPACE
+
 
 class Board:
     """The Connect 4 game board."""
-
-    # m x n matrix
-    m = 6
-    n = 7
     
     def __init__(self):
         """Creates a Board instance."""
-        self.board = np.zeros((self.m, self.n))
+        self.board = np.zeros((M, N))
 
         # Store moves of each player separately
-        self.p1_moves = np.zeros((self.m, self.n))
-        self.p2_moves = np.zeros((self.m, self.n))
+        self.p1_moves = np.zeros((M, N))
+        self.p2_moves = np.zeros((M, N))
 
     def valid_moves(self):
         """Gets a list of all valid moves as tuples.
@@ -27,13 +25,13 @@ class Board:
         """
         moves = []
 
-        for i in range(self.m):
-            for j in range(self.n):
+        for i in range(M):
+            for j in range(N):
 
-                if self.board[i, j] == 0:
+                if self.board[i, j] == SPACE:
 
                     # Either bottom row or there's a coin below
-                    if i == 0 or self.board[i - 1, j] != 0:
+                    if i == 0 or self.board[i - 1, j] != SPACE:
                         moves.append((i, j))
 
         return moves
@@ -48,7 +46,7 @@ class Board:
         self.board[coords[0], coords[1]] = player
 
         # Store 1 for player move and 0 for other spots for win check purposes
-        if player == 1:
+        if player == P1:
             self.p1_moves[coords[0], coords[1]] = 1
         else:
             self.p2_moves[coords[0], coords[1]] = 1
@@ -70,13 +68,13 @@ class Board:
 
         win_patterns = [horizontal_kernel, vertical_kernel, pos_diag_kernel, neg_diag_kernel]
 
-        if player == 1:
+        if player == P1:
             check_board = self.p1_moves
         else:
             check_board = self.p2_moves
 
         for kernel in win_patterns:
-            # Use convolve2d on player specific move board
+            # Use convolve2d on player specific move board to check for 4 in a row
             if (convolve2d(check_board, kernel, mode="valid") == 4).any():
                 return True
         return False
@@ -87,7 +85,7 @@ class Board:
         Returns:
             bool: Whether the board is full.
         """
-        return not (0 in self.board)
+        return not (SPACE in self.board)
     
     def print(self):
         """Prints the Connect 4 board to the console."""
