@@ -6,6 +6,10 @@ from scipy.signal import convolve2d
 
 class Board:
     """The Connect 4 game board."""
+
+    # m x n matrix
+    m = 6
+    n = 7
     
     def __init__(self):
         """Creates a Board instance."""
@@ -14,24 +18,6 @@ class Board:
         # Store moves of each player separately
         self.p1_moves = np.zeros((self.m, self.n))
         self.p2_moves = np.zeros((self.m, self.n))
-
-    @property
-    def m(self):
-        """The number of rows of the board.
-
-        Returns:
-            int: 6
-        """
-        return 6
-    
-    @property
-    def n(self):
-        """The number of columns of the board.
-
-        Returns:
-            int: 7
-        """
-        return 7
 
     def valid_moves(self):
         """Gets a list of all valid moves as tuples.
@@ -101,7 +87,7 @@ class Board:
         Returns:
             bool: Whether the board is full.
         """
-        return 0 in self.board
+        return not (0 in self.board)
     
     def print(self):
         """Prints the Connect 4 board to the console."""
