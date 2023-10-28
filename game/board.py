@@ -7,17 +7,31 @@ from scipy.signal import convolve2d
 class Board:
     """The Connect 4 game board."""
     
-    # m x n matrix
-    m = 6
-    n = 7
-
     def __init__(self):
-        """Board class initializer."""
+        """Creates a Board instance."""
         self.board = np.zeros((self.m, self.n))
 
         # Store moves of each player separately
         self.p1_moves = np.zeros((self.m, self.n))
         self.p2_moves = np.zeros((self.m, self.n))
+
+    @property
+    def m(self):
+        """The number of rows of the board.
+
+        Returns:
+            int: 6
+        """
+        return 6
+    
+    @property
+    def n(self):
+        """The number of columns of the board.
+
+        Returns:
+            int: 7
+        """
+        return 7
 
     def valid_moves(self):
         """Gets a list of all valid moves as tuples.
@@ -43,7 +57,7 @@ class Board:
 
         Args:
             player (int): Player 1 or 2.
-            coords (tuple): Coordinates to place coin on the board.
+            coords (tuple): Coordinates to place the coin on the board.
         """
         self.board[coords[0], coords[1]] = player
 
@@ -62,7 +76,6 @@ class Board:
         Returns:
             bool: Whether the player won or not.
         """
-
         # Win check matrices: horizontal, vertical, diagonal
         horizontal_kernel = np.full((1, 4), 1)
         vertical_kernel = np.transpose(horizontal_kernel)
@@ -81,6 +94,14 @@ class Board:
             if (convolve2d(check_board, kernel, mode="valid") == 4).any():
                 return True
         return False
+    
+    def check_board_full(self):
+        """Returns whether there are any spaces left in the board.
+
+        Returns:
+            bool: Whether the board is full.
+        """
+        return 0 in self.board
     
     def print(self):
         """Prints the Connect 4 board to the console."""
