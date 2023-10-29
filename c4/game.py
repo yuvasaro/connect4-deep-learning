@@ -1,7 +1,7 @@
 """The Connect 4 game."""
 
-from board import Board
-from constants import P1, P2, TIE, ONGOING
+from c4.board import Board
+from c4.constants import P1, P2, TIE, ONGOING
 
 
 class Game:

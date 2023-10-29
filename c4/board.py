@@ -3,7 +3,7 @@
 import numpy as np
 from scipy.signal import convolve2d
 
-from constants import M, N, P1, SPACE
+from c4.constants import M, N, P1, SPACE
 
 
 class Board:
