@@ -16,10 +16,10 @@ class TestGame(unittest.TestCase):
 
     def test_toggle_turn(self):
         self.game.toggle_turn()
-        self.assertEqual(self.game.turn, 2)
+        self.assertEqual(self.game._turn, 2)
 
         self.game.toggle_turn()
-        self.assertEqual(self.game.turn, 1)
+        self.assertEqual(self.game._turn, 1)
 
     def test_move(self):
         move1 = self.game.move(P1, 3)
@@ -30,7 +30,7 @@ class TestGame(unittest.TestCase):
         self.assertTrue(move1)
         self.assertTrue(move2)
 
-        np.testing.assert_equal(self.game.board.board, np.array([[0, 0, 0, 1, 0, 0, 0],
+        np.testing.assert_equal(self.game._board._board, np.array([[0, 0, 0, 1, 0, 0, 0],
                                                                  [0, 0, 0, 2, 0, 0, 0],
                                                                  [0, 0, 0, 0, 0, 0, 0],
                                                                  [0, 0, 0, 0, 0, 0, 0],

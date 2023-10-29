@@ -1,7 +1,7 @@
 """The Connect 4 game."""
 
 from c4.board import Board
-from c4.constants import P1, P2, TIE, ONGOING
+from c4.constants import N, P1, P2, DRAW, ONGOING
 
 
 class Game:
@@ -9,15 +9,23 @@ class Game:
     
     def __init__(self):
         "Creates a Connect 4 game instance."
-        self.board = Board()
-        self.turn = P1 # Player 1's turn
+        self._board = Board()
+        self._turn = P1 # Player 1's turn
+
+    def turn(self):
+        """Returns whose turn it is.
+
+        Returns:
+            int: Player 1 or 2.
+        """
+        return self._turn
 
     def toggle_turn(self):
         """Toggles whose turn it is."""
-        if self.turn == P1:
-            self.turn = P2
+        if self._turn == P1:
+            self._turn = P2
         else:
-            self.turn = P1
+            self._turn = P1
 
     def move(self, player, column):
         """Places a coin on the board for the given player.
@@ -29,12 +37,15 @@ class Game:
         Returns:
             bool: Whether the move was successful.
         """
-        if self.turn != player: # Safety measure
+        if self._turn != player: # Safety measure
+            return False
+        
+        if column < 0 or column >= N:
             return False
 
-        for coords in self.board.valid_moves():
+        for coords in self._board.valid_moves():
             if coords[1] == column:
-                self.board.place_coin(player, coords)
+                self._board.place_coin(player, coords)
                 return True
         return False
     
@@ -49,10 +60,14 @@ class Game:
                 3 = tie
         """
         # Only the last player who moved can win
-        if self.board.check_win(self.turn):
-            return self.turn
+        if self._board.check_win(self._turn):
+            return self._turn
         
-        if self.board.check_board_full():
-            return TIE
+        if self._board.check_board_full():
+            return DRAW
         
         return ONGOING
+    
+    def print_board(self):
+        """Prints the game board."""
+        self._board.print()

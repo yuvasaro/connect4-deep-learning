@@ -28,7 +28,7 @@ class TestBoard(unittest.TestCase):
         self.board.place_coin(P1, (0, 2))
         self.board.place_coin(P1, (0, 3))
 
-        np.testing.assert_equal(self.board.board, np.array([[1, 1, 1, 1, 0, 0, 0],
+        np.testing.assert_equal(self.board._board, np.array([[1, 1, 1, 1, 0, 0, 0],
                                                             [0, 0, 0, 0, 0, 0, 0],
                                                             [0, 0, 0, 0, 0, 0, 0],
                                                             [0, 0, 0, 0, 0, 0, 0],

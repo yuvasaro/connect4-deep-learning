@@ -11,11 +11,11 @@ class Board:
     
     def __init__(self):
         """Creates a Board instance."""
-        self.board = np.zeros((M, N))
+        self._board = np.zeros((M, N), dtype=int)
 
         # Store moves of each player separately
-        self.p1_moves = np.zeros((M, N))
-        self.p2_moves = np.zeros((M, N))
+        self._p1_moves = np.zeros((M, N), dtype=int)
+        self._p2_moves = np.zeros((M, N), dtype=int)
 
     def valid_moves(self):
         """Gets a list of all valid moves as tuples.
@@ -28,10 +28,10 @@ class Board:
         for i in range(M):
             for j in range(N):
 
-                if self.board[i, j] == SPACE:
+                if self._board[i, j] == SPACE:
 
                     # Either bottom row or there's a coin below
-                    if i == 0 or self.board[i - 1, j] != SPACE:
+                    if i == 0 or self._board[i - 1, j] != SPACE:
                         moves.append((i, j))
 
         return moves
@@ -43,13 +43,13 @@ class Board:
             player (int): Player 1 or 2.
             coords (tuple): Coordinates to place the coin on the board.
         """
-        self.board[coords[0], coords[1]] = player
+        self._board[coords[0], coords[1]] = player
 
         # Store 1 for player move and 0 for other spots for win check purposes
         if player == P1:
-            self.p1_moves[coords[0], coords[1]] = 1
+            self._p1_moves[coords[0], coords[1]] = 1
         else:
-            self.p2_moves[coords[0], coords[1]] = 1
+            self._p2_moves[coords[0], coords[1]] = 1
 
     def check_win(self, player):
         """Checks whether the given player has a sequence of 4 coins in a row.
@@ -69,9 +69,9 @@ class Board:
         win_patterns = [horizontal_kernel, vertical_kernel, pos_diag_kernel, neg_diag_kernel]
 
         if player == P1:
-            check_board = self.p1_moves
+            check_board = self._p1_moves
         else:
-            check_board = self.p2_moves
+            check_board = self._p2_moves
 
         for kernel in win_patterns:
             # Use convolve2d on player specific move board to check for 4 in a row
@@ -85,8 +85,8 @@ class Board:
         Returns:
             bool: Whether the board is full.
         """
-        return not (SPACE in self.board)
+        return not (SPACE in self._board)
     
     def print(self):
         """Prints the Connect 4 board to the console."""
-        print(np.flipud(self.board))
+        print(np.flipud(self._board))
