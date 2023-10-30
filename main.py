@@ -1,7 +1,10 @@
 """Console Connect 4 game."""
 
+import sys
+
 from c4.constants import P1, P2, DRAW, ONGOING
 from c4.game import Game
+from gui.c4_gui import C4_GUI
 
 
 def main():
@@ -35,4 +38,7 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    if len(sys.argv) == 2 and sys.argv[1] == "console":
+        main()
+    else:
+        C4_GUI()

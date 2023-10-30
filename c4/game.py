@@ -1,5 +1,7 @@
 """The Connect 4 game."""
 
+import numpy as np
+
 from c4.board import Board
 from c4.constants import N, P1, P2, DRAW, ONGOING
 
@@ -11,6 +13,14 @@ class Game:
         "Creates a Connect 4 game instance."
         self._board = Board()
         self._turn = P1 # Player 1's turn
+
+    def board(self):
+        """Returns the game board.
+
+        Returns:
+            np.ndarray: The game board.
+        """
+        return self._board
 
     def turn(self):
         """Returns whose turn it is.

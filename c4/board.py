@@ -51,6 +51,19 @@ class Board:
         else:
             self._p2_moves[coords[0], coords[1]] = 1
 
+    def get_coin(self, coords):
+        """Returns the coin at the given coordinates.
+
+        Args:
+            coords (tuple): Coordinates on the board
+
+        Returns:
+            int: The coin on the given coordinates
+        """
+        if (coords[0] < 0 or coords[0] >= M or coords[1] < 0 or coords[1] >= N):
+            return -1
+        return self._board[coords[0], coords[1]]
+
     def check_win(self, player):
         """Checks whether the given player has a sequence of 4 coins in a row.
 
