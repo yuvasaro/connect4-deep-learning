@@ -40,5 +40,7 @@ def main():
 if __name__ == "__main__":
     if len(sys.argv) == 2 and sys.argv[1] == "console":
         main()
-    else:
+    elif len(sys.argv) == 1:
         C4_GUI()
+    else:
+        print("\nUsage:\n\tGUI version: python3 main.py\n\tConsole version: python3 main.py console")
