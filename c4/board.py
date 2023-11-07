@@ -76,10 +76,10 @@ class Board:
         # Win check matrices: horizontal, vertical, diagonal
         horizontal_kernel = np.full((1, 4), 1)
         vertical_kernel = np.transpose(horizontal_kernel)
-        pos_diag_kernel = np.eye(4, dtype=int)
-        neg_diag_kernel = np.fliplr(pos_diag_kernel)
+        neg_diag_kernel = np.eye(4, dtype=int)
+        pos_diag_kernel = np.fliplr(neg_diag_kernel)
 
-        win_patterns = [horizontal_kernel, vertical_kernel, pos_diag_kernel, neg_diag_kernel]
+        win_patterns = [horizontal_kernel, vertical_kernel, neg_diag_kernel, pos_diag_kernel]
 
         if player == P1:
             check_board = self._p1_moves
