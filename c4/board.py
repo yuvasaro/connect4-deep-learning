@@ -17,6 +17,22 @@ class Board:
         self._p1_moves = np.zeros((M, N), dtype=int)
         self._p2_moves = np.zeros((M, N), dtype=int)
 
+    def get_p1_moves(self):
+        """Gets Player 1's moves.
+
+        Returns:
+            np.ndarray: Player 1's moves.
+        """
+        return self._p1_moves
+
+    def get_p2_moves(self):
+        """Gets Player 2's moves.
+
+        Returns:
+            np.ndarray: Player 2's moves.
+        """
+        return self._p2_moves
+
     def valid_moves(self):
         """Gets a list of all valid moves as tuples.
         

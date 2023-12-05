@@ -26,7 +26,6 @@ class C4_GUI:
     height = (M + 1) * slot_size
     font_size = 60
     font = pygame.font.SysFont('Comic Sans MS', font_size)
-    fps = 60
 
     # Colors
     blue = (0, 0, 255)
@@ -125,6 +124,6 @@ class C4_GUI:
 
             # Update display
             pygame.display.flip()
-            self.clock.tick(self.fps)
+            self.clock.tick(FPS)
 
         pygame.quit()
