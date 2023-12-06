@@ -1,4 +1,4 @@
-# Connect 4 AI
+# Connect 4 Deep Learning
 
 ## Status: In Progress
 
@@ -19,9 +19,9 @@ trained using Deep Q-Learning and my own implementation of multi-agent reinforce
 
 1. Download the repository and `cd` into it:
 
-    `git clone https://github.com/yuvasaro/connect4ai`
+    `git clone https://github.com/yuvasaro/connect4-deep-learning`
 
-    `cd connect4ai`
+    `cd connect4-deep-learning`
 
 2. Create a virtual environment and activate it:
 
