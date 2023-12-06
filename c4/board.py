@@ -13,25 +13,13 @@ class Board:
         """Creates a Board instance."""
         self._board = np.zeros((M, N), dtype=int)
 
-        # Store moves of each player separately
-        self._p1_moves = np.zeros((M, N), dtype=int)
-        self._p2_moves = np.zeros((M, N), dtype=int)
-
-    def get_p1_moves(self):
-        """Gets Player 1's moves.
+    def array(self):
+        """Gets the M by N numpy board array.
 
         Returns:
-            np.ndarray: Player 1's moves.
+            np.ndarray: The board array.
         """
-        return self._p1_moves
-
-    def get_p2_moves(self):
-        """Gets Player 2's moves.
-
-        Returns:
-            np.ndarray: Player 2's moves.
-        """
-        return self._p2_moves
+        return self._board
 
     def valid_moves(self):
         """Gets a list of all valid moves as tuples.
@@ -60,12 +48,6 @@ class Board:
             coords (tuple): Coordinates to place the coin on the board.
         """
         self._board[coords[0], coords[1]] = player
-
-        # Store 1 for player move and 0 for other spots for win check purposes
-        if player == P1:
-            self._p1_moves[coords[0], coords[1]] = 1
-        else:
-            self._p2_moves[coords[0], coords[1]] = 1
 
     def get_coin(self, coords):
         """Returns the coin at the given coordinates.
@@ -97,14 +79,9 @@ class Board:
 
         win_patterns = [horizontal_kernel, vertical_kernel, neg_diag_kernel, pos_diag_kernel]
 
-        if player == P1:
-            check_board = self._p1_moves
-        else:
-            check_board = self._p2_moves
-
         for kernel in win_patterns:
             # Use convolve2d on player specific move board to check for 4 in a row
-            if (convolve2d(check_board, kernel, mode="valid") == 4).any():
+            if (convolve2d(self._board == player, kernel, mode="valid") == 4).any():
                 return True
         return False
     
@@ -115,6 +92,22 @@ class Board:
             bool: Whether the board is full.
         """
         return not (SPACE in self._board)
+    
+    def get_full_cols(self):
+        """Returns a list of full columns in the board.
+
+        Returns:
+            list: A list of full columns in the board.
+        """
+        full_cols = []
+        for j in range(N):
+            if SPACE not in self._board[:, j]:
+                full_cols.append(j)
+        return full_cols
+    
+    def reset(self):
+        """Resets the game board."""
+        self._board.fill(SPACE)
     
     def print(self):
         """Prints the Connect 4 board to the console."""

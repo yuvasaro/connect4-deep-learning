@@ -15,10 +15,10 @@ class Game:
         self._turn = P1 # Player 1's turn
 
     def board(self):
-        """Returns the game board.
+        """Returns the game board object.
 
         Returns:
-            np.ndarray: The game board.
+            Board: The game board object.
         """
         return self._board
 
@@ -36,6 +36,15 @@ class Game:
             self._turn = P2
         else:
             self._turn = P1
+
+    def valid_moves(self):
+        """Gets a list of columns that coins may be placed in.
+
+        Returns:
+            list: A list of valid columns to place coins in.
+        """
+        move_tuples = self._board.valid_moves()
+        return [coords[1] for coords in move_tuples]
 
     def move(self, player, column):
         """Places a coin on the board for the given player.
@@ -77,6 +86,15 @@ class Game:
             return DRAW
         
         return ONGOING
+    
+    def reset(self, first_player):
+        """Resets the game.
+
+        Args:
+            first_player (int): The player who goes first the next game.
+        """
+        self._board.reset()
+        self._turn = first_player
     
     def print_board(self):
         """Prints the game board."""

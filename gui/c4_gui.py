@@ -1,10 +1,11 @@
 """Connect 4 GUI."""
 
 import math
+import pathlib
 
+import numpy as np
 import pygame
-pygame.init()
-pygame.font.init()
+import keras
 
 from c4.constants import *
 from c4.game import Game
@@ -12,6 +13,8 @@ from c4.game import Game
 
 class C4_GUI:
     """Connect 4 GUI."""
+    pygame.init()
+    pygame.font.init()
 
     # Game and board objects
     game = Game()
@@ -33,11 +36,18 @@ class C4_GUI:
     red = (255, 0, 0) # P1
     yellow = (255, 255, 0) # P2
     
-    def __init__(self):
+    def __init__(self, play_ai=False):
         """Creates a Connect 4 GUI instance."""
         self.window = pygame.display.set_mode((self.width, self.height))
         pygame.display.set_caption("Connect 4")
         self.clock = pygame.time.Clock()
+
+        self.first_player = P1
+        if play_ai:
+            if pathlib.Path(MODEL).is_file():
+                self.ai = keras.models.load_model(MODEL)
+            else:
+                print("Error: No model saved. Please train the AI first with 'python3 main.py train_ai'")
       
         running = True
         while running:
@@ -78,26 +88,36 @@ class C4_GUI:
                         )
                 
                 if self.game_state == ONGOING:
-                    # Draw coin near cursor
-                    if event.type == pygame.MOUSEMOTION:
-                        mouse_x = event.pos[0]
-                        if self.game.turn() == P1:
-                            pygame.draw.circle(self.window, self.red, (mouse_x, self.slot_size / 2), self.circle_radius)
-                        else:
-                            pygame.draw.circle(self.window, self.yellow, (mouse_x, self.slot_size / 2), self.circle_radius)
-                    
-                    if event.type == pygame.MOUSEBUTTONUP:
-                        self.can_place = True
-
-                    # Place coin in closest column to cursor
-                    if event.type == pygame.MOUSEBUTTONDOWN and self.can_place:
-                        mouse_x = event.pos[0]
-                        col = int(math.floor(mouse_x / self.slot_size))
-                        self.game.move(self.game.turn(), col)
-                        self.can_place = False
-
+                    # AI plays player 2
+                    if play_ai and self.game.turn() == P2:
+                        q_values = self.ai(np.append(self.board.array(), P2).reshape(1, -1)).numpy()
+                        full_cols = self.board.get_full_cols()
+                        np.put(q_values, full_cols, [-math.inf for _ in full_cols])
+                        ai_move = np.argmax(q_values)
+                        self.game.move(P2, ai_move)
                         self.game_state = self.game.check_game_end()
                         self.game.toggle_turn()
+                    else:
+                        # Draw coin near cursor
+                        if event.type == pygame.MOUSEMOTION:
+                            mouse_x = event.pos[0]
+                            if self.game.turn() == P1:
+                                pygame.draw.circle(self.window, self.red, (mouse_x, self.slot_size / 2), self.circle_radius)
+                            else:
+                                pygame.draw.circle(self.window, self.yellow, (mouse_x, self.slot_size / 2), self.circle_radius)
+                        
+                        if event.type == pygame.MOUSEBUTTONUP:
+                            self.can_place = True
+
+                        # Place coin in closest column to cursor
+                        if event.type == pygame.MOUSEBUTTONDOWN and self.can_place:
+                            mouse_x = event.pos[0]
+                            col = int(math.floor(mouse_x / self.slot_size))
+                            self.game.move(self.game.turn(), col)
+                            self.can_place = False
+
+                            self.game_state = self.game.check_game_end()
+                            self.game.toggle_turn()
                 else:
                     if self.game_state == P1:
                         text = f"Player {self.game_state} wins!"
@@ -115,11 +135,12 @@ class C4_GUI:
                     if event.type == pygame.KEYDOWN:
                         # Start a new game if the enter key is pressed
                         if pygame.key.get_pressed()[pygame.K_RETURN]:
-                            old_game = self.game
-                            self.game = Game()
-                            del old_game
-                            
-                            self.board = self.game.board()
+                            if self.first_player == P1:
+                                self.first_player = P2
+                                self.game.reset(P2)
+                            else:
+                                self.first_player = P1
+                                self.game.reset(P1)
                             self.game_state = ONGOING
 
             # Update display
