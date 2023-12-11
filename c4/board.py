@@ -3,7 +3,7 @@
 import numpy as np
 from scipy.signal import convolve2d
 
-from c4.constants import M, N, P1, SPACE
+from c4.constants import *
 
 
 class Board:
@@ -112,3 +112,15 @@ class Board:
     def print(self):
         """Prints the Connect 4 board to the console."""
         print(np.flipud(self._board))
+
+    def switch_teams_of_coins(self):
+        """Switches the teams of the coins on the board.
+
+        Returns:
+            np.ndarray: A copy of the board with the coin teams switched.
+        """
+        board = np.copy(self._board)
+        board[board == P1] = PLACEHOLDER
+        board[board == P2] = P1
+        board[board == PLACEHOLDER] = P2
+        return board

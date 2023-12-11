@@ -33,8 +33,7 @@ class Trainer:
 
         self._game = Game()
         self._board = self._game.board()
-        self._agent1 = Agent(P1, self._game, self._q_network, self._target_q_network, self._optimizer)
-        self._agent2 = Agent(P2, self._game, self._q_network, self._target_q_network, self._optimizer)
+        self._agent = Agent(P1, self._game, self._q_network, self._target_q_network, self._optimizer)
 
     def _new_epsilon(self, epsilon):
         """Returns a new, lower epsilon value to use for the ε-greedy policy for choosing actions.
@@ -60,31 +59,29 @@ class Trainer:
     def train(self):
         """Trains the Connect 4 deep learning model."""
         start = time.time()
-        episodes = 40000
+        episodes = 20000
         epsilon = 1.0
 
         print("Training...")
 
         for _ in range(episodes):
             # Reset game, get initial state
-            self._game.reset(self._agent1.get_player())
+            self._game.reset(self._agent.get_player())
 
             done = False
             while not done:
                 # Agent 1 move
-                done = self._agent1.step(epsilon)
+                done = self._agent.step(epsilon)
                 self._game.toggle_turn()
 
-                # Agent 2 move
+                # Switch teams and make the same agent play as the opponent
                 if not done:
-                    done = self._agent2.step(epsilon)
+                    done = self._agent.step(epsilon, playing_opponent=True)
                     self._game.toggle_turn()
 
-            if self._agent1.num_experiences() >= MINIBATCH_SIZE and self._agent2.num_experiences() >= MINIBATCH_SIZE:
-                agent1_exp = self._agent1.sample_experiences()
-                agent2_exp = self._agent2.sample_experiences() 
-                self._agent1.learn(agent1_exp, GAMMA)
-                self._agent2.learn(agent2_exp, GAMMA)
+            if self._agent.num_experiences() >= MINIBATCH_SIZE:
+                agent_exp = self._agent.sample_experiences()
+                self._agent.learn(agent_exp, GAMMA)
                 self._update_target_network(self._q_network, self._target_q_network)
 
             epsilon = self._new_epsilon(epsilon)
@@ -121,7 +118,12 @@ class Trainer:
                 player = self._game.turn()
 
                 if player == ai_player:
-                    q_values = model(np.append(self._board.array(), ai_player).reshape(1, -1)).numpy()
+                    if ai_player == P2:
+                        calc_board = self._board.switch_teams_of_coins()
+                    else:
+                        calc_board = self._board.array()
+
+                    q_values = model(calc_board.reshape(INPUT_SHAPE)).numpy()
                     full_cols = self._board.get_full_cols()
                     np.put(q_values, full_cols, [-math.inf for _ in full_cols])
                     ai_move = np.argmax(q_values)

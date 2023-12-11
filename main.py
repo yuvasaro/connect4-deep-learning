@@ -49,7 +49,7 @@ if __name__ == "__main__":
         if sys.argv[1] == "console":
             main()
         elif sys.argv[1] == "train_ai":
-            Trainer().train()
+            Trainer(new_model=True).train()
         elif sys.argv[1] == "simulate":
             Trainer().simulate_games_vs_random(1000)
         elif sys.argv[1] == "play_ai":

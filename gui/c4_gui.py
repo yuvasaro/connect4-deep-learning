@@ -90,7 +90,8 @@ class C4_GUI:
                 if self.game_state == ONGOING:
                     # AI plays player 2
                     if play_ai and self.game.turn() == P2:
-                        q_values = self.ai(np.append(self.board.array(), P2).reshape(1, -1)).numpy()
+                        switch_board = self.board.switch_teams_of_coins()
+                        q_values = self.ai(switch_board.reshape(INPUT_SHAPE)).numpy()
                         full_cols = self.board.get_full_cols()
                         np.put(q_values, full_cols, [-math.inf for _ in full_cols])
                         ai_move = np.argmax(q_values)
