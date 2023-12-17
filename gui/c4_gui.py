@@ -18,7 +18,7 @@ class C4_GUI:
 
     # Game and board objects
     game = Game()
-    board = game.board()
+    board = game.board
     game_state = ONGOING
     can_place = False
 
@@ -42,14 +42,18 @@ class C4_GUI:
         pygame.display.set_caption("Connect 4")
         self.clock = pygame.time.Clock()
 
-        self.first_player = P1
+        self.player = P1
+        self.ai = P2
         if play_ai:
-            if pathlib.Path(MODEL).is_file():
-                self.ai = keras.models.load_model(MODEL)
+            if pathlib.Path(MODEL_P1).is_file() and pathlib.Path(MODEL_P2).is_file():
+                self.ai_p1 = keras.models.load_model(MODEL_P1)
+                self.ai_p2 = keras.models.load_model(MODEL_P2)
             else:
                 print("Error: No model saved. Please train the AI first with 'python3 main.py train_ai'")
       
         running = True
+        # ai_predict = False # AI predicts what the human's best move is
+
         while running:
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
@@ -88,21 +92,35 @@ class C4_GUI:
                         )
                 
                 if self.game_state == ONGOING:
-                    # AI plays player 2
-                    if play_ai and self.game.turn() == P2:
-                        switch_board = self.board.switch_teams_of_coins()
-                        q_values = self.ai(switch_board.reshape(INPUT_SHAPE)).numpy()
+                    if play_ai and self.game.turn == self.ai:
+                        if self.ai == P1:
+                            q_values = self.ai_p1(self.board.array().reshape(INPUT_SHAPE)).numpy()
+                        else:
+                            q_values = self.ai_p2(self.board.array().reshape(INPUT_SHAPE)).numpy()
+
                         full_cols = self.board.get_full_cols()
                         np.put(q_values, full_cols, [-math.inf for _ in full_cols])
                         ai_move = np.argmax(q_values)
-                        self.game.move(P2, ai_move)
+                        self.game.move(self.ai, ai_move)
                         self.game_state = self.game.check_game_end()
                         self.game.toggle_turn()
+                        # ai_predict = True
                     else:
+                        # if ai_predict:
+                        #     if self.player == P1:
+                        #         q_values = self.ai_p1(self.board.array().reshape(INPUT_SHAPE)).numpy()
+                        #     else:
+                        #         q_values = self.ai_p2(self.board.array().reshape(INPUT_SHAPE)).numpy()
+                        #     full_cols = self.board.get_full_cols()
+                        #     np.put(q_values, full_cols, [-math.inf for _ in full_cols])
+                        #     ai_move = np.argmax(q_values)
+                        #     print(f"AI thinks your best move is column {ai_move + 1}")
+                        #     ai_predict = False
+
                         # Draw coin near cursor
                         if event.type == pygame.MOUSEMOTION:
                             mouse_x = event.pos[0]
-                            if self.game.turn() == P1:
+                            if self.game.turn == P1:
                                 pygame.draw.circle(self.window, self.red, (mouse_x, self.slot_size / 2), self.circle_radius)
                             else:
                                 pygame.draw.circle(self.window, self.yellow, (mouse_x, self.slot_size / 2), self.circle_radius)
@@ -114,7 +132,7 @@ class C4_GUI:
                         if event.type == pygame.MOUSEBUTTONDOWN and self.can_place:
                             mouse_x = event.pos[0]
                             col = int(math.floor(mouse_x / self.slot_size))
-                            self.game.move(self.game.turn(), col)
+                            self.game.move(self.game.turn, col)
                             self.can_place = False
 
                             self.game_state = self.game.check_game_end()
@@ -136,12 +154,13 @@ class C4_GUI:
                     if event.type == pygame.KEYDOWN:
                         # Start a new game if the enter key is pressed
                         if pygame.key.get_pressed()[pygame.K_RETURN]:
-                            if self.first_player == P1:
-                                self.first_player = P2
-                                self.game.reset(P2)
+                            if self.player == P1:
+                                self.player = P2
+                                self.ai = P1
                             else:
-                                self.first_player = P1
-                                self.game.reset(P1)
+                                self.player = P1
+                                self.ai = P2
+                            self.game.reset(P1)
                             self.game_state = ONGOING
 
             # Update display

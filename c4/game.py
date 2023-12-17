@@ -11,31 +11,15 @@ class Game:
     
     def __init__(self):
         "Creates a Connect 4 game instance."
-        self._board = Board()
-        self._turn = P1 # Player 1's turn
-
-    def board(self):
-        """Returns the game board object.
-
-        Returns:
-            Board: The game board object.
-        """
-        return self._board
-
-    def turn(self):
-        """Returns whose turn it is.
-
-        Returns:
-            int: Player 1 or 2.
-        """
-        return self._turn
+        self.board = Board()
+        self.turn = P1 # Player 1's turn
 
     def toggle_turn(self):
         """Toggles whose turn it is."""
-        if self._turn == P1:
-            self._turn = P2
+        if self.turn == P1:
+            self.turn = P2
         else:
-            self._turn = P1
+            self.turn = P1
 
     def valid_moves(self):
         """Gets a list of columns that coins may be placed in.
@@ -43,7 +27,7 @@ class Game:
         Returns:
             list: A list of valid columns to place coins in.
         """
-        move_tuples = self._board.valid_moves()
+        move_tuples = self.board.valid_moves()
         return [coords[1] for coords in move_tuples]
 
     def move(self, player, column):
@@ -56,15 +40,15 @@ class Game:
         Returns:
             bool: Whether the move was successful.
         """
-        if self._turn != player: # Safety measure
+        if self.turn != player: # Safety measure
             return False
         
         if column < 0 or column >= N:
             return False
 
-        for coords in self._board.valid_moves():
+        for coords in self.board.valid_moves():
             if coords[1] == column:
-                self._board.place_coin(player, coords)
+                self.board.place_coin(player, coords)
                 return True
         return False
     
@@ -79,10 +63,10 @@ class Game:
                 3 = tie
         """
         # Only the last player who moved can win
-        if self._board.check_win(self._turn):
-            return self._turn
+        if self.board.check_win(self.turn):
+            return self.turn
         
-        if self._board.check_board_full():
+        if self.board.check_board_full():
             return DRAW
         
         return ONGOING
@@ -93,9 +77,9 @@ class Game:
         Args:
             first_player (int): The player who goes first the next game.
         """
-        self._board.reset()
-        self._turn = first_player
+        self.board.reset()
+        self.turn = first_player
     
     def print_board(self):
         """Prints the game board."""
-        self._board.print()
+        self.board.print()

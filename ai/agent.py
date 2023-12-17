@@ -12,7 +12,7 @@ import math
 import numpy as np
 import tensorflow as tf
 from tensorflow.python.keras.models import Sequential
-from tensorflow.python.keras.layers import InputLayer, Dense, Conv2D, Flatten, GlobalMaxPooling1D
+from tensorflow.python.keras.layers import InputLayer, Dense, Conv2D, Flatten, LeakyReLU
 from tensorflow.python.keras.optimizers import adam_v2
 from tensorflow.python.keras.losses import MSE
 from scipy.signal import convolve2d
@@ -34,21 +34,29 @@ class Agent:
             tuple: Q-network, target Q-network, optimizer.
         """
         q_network = Sequential([
-            # InputLayer(input_shape),
-            Conv2D(64, (4, 4), input_shape=INPUT_SHAPE[1:], activation="relu"),
+            Conv2D(64, 4, input_shape=INPUT_SHAPE[1:]),
+            LeakyReLU(),
+            Conv2D(64, 2, input_shape=INPUT_SHAPE[1:]),
+            LeakyReLU(),
             Flatten(),
-            Dense(64, activation="relu"),
-            Dense(64, activation="relu"),
-            Dense(N, activation="linear")
+            Dense(64),
+            LeakyReLU(),
+            Dense(64),
+            LeakyReLU(),
+            Dense(N)
         ])
 
         target_q_network = Sequential([
-            # InputLayer(input_shape),
-            Conv2D(64, (4, 4), input_shape=INPUT_SHAPE[1:], activation="relu"),
+            Conv2D(64, 4, input_shape=INPUT_SHAPE[1:]),
+            LeakyReLU(),
+            Conv2D(64, 2, input_shape=INPUT_SHAPE[1:]),
+            LeakyReLU(),
             Flatten(),
-            Dense(64, activation="relu"),
-            Dense(64, activation="relu"),
-            Dense(N, activation="linear")
+            Dense(64),
+            LeakyReLU(),
+            Dense(64),
+            LeakyReLU(),
+            Dense(N)
         ])
 
         target_q_network.set_weights(q_network.get_weights()) # start off with same weights
@@ -69,14 +77,13 @@ class Agent:
             target_q_network (Sequential): Shared target Q-network between agents.
             optimizer (Adam): Adam optimizer used in the learning algorithm.
         """
-        self._player = player
-        self._game = game
-        self._board = game.board()
-        self._q_network = q_network
-        self._target_q_network = target_q_network
-        self._optimizer = optimizer
-
-        self._memory_buffer = deque(maxlen=MEMORY_SIZE)
+        self.player = player
+        self.game = game
+        self.board = game.board
+        self.q_network = q_network
+        self.target_q_network = target_q_network
+        self.optimizer = optimizer
+        self.memory_buffer = deque(maxlen=MEMORY_SIZE)
 
     def get_player(self):
         """Gets the player the agent is playing.
@@ -84,7 +91,7 @@ class Agent:
         Returns:
             int: The player the agent is playing.
         """
-        return self._player
+        return self.player
     
     def set_player(self, player):
         """Sets the player the agent is playing
@@ -92,9 +99,9 @@ class Agent:
         Args:
             player (int): The new player the agent is playing.
         """
-        self._player = player
+        self.player = player
 
-    def _compute_loss(self, experiences, gamma):
+    def compute_loss(self, experiences, gamma):
         """Calculates the loss of the current guess of the Q-function.
 
         Args:
@@ -116,11 +123,11 @@ class Agent:
         # optimal Q-function.
 
         # Calculate target values using target Q-network
-        max_Q = tf.reduce_max(self._target_q_network(tf.reshape(next_states, BATCH_SHAPE)), axis=1)
+        max_Q = tf.reduce_max(self.target_q_network(tf.reshape(next_states, BATCH_SHAPE)), axis=1)
         y_targets = rewards + gamma * max_Q * (1 - done_vals) # right side of bellman equation
 
         # Get the q_values for all N actions done at all the initial states; shape = (len(states), N)
-        q_values = self._q_network(tf.reshape(states, BATCH_SHAPE))
+        q_values = self.q_network(tf.reshape(states, BATCH_SHAPE))
         # Get the q_values for the specific action taken at each of the initial states; shape = (len(states), 1)
         #   tf.gather_nd: gather values of parameters (q_values) based on indices
         #   tf.stack: creates a matrix of indices where each row is of the form [row index, action index]
@@ -130,7 +137,7 @@ class Agent:
         # Now we can calculate the mean-squared error loss between the Q-values and target values
         return MSE(y_targets, q_values)
 
-    def _choose_action(self, q_values, full_cols, epsilon=0):
+    def choose_action(self, q_values, full_cols, epsilon=0):
         """Chooses an action to take using an ε-greedy policy.
 
         Args:
@@ -145,81 +152,30 @@ class Agent:
         if random.random() > epsilon:
             return np.argmax(q_values[0])
         else:
-            return random.choice(self._game.valid_moves())
+            return random.choice(self.game.valid_moves())
         
-    def _get_reward(self, board):
+    def get_reward(self, game_state):
         """Returns the reward for the given game board.
 
         Args:
-            board (np.ndarray): The board to calculate the reward for.
+            game_state (int): The game state.
 
         Returns:
             int: The reward for the given game board.
         """
-        # We want to check how many 2 in a rows, 3 in a rows, and 4 in a rows each player has
-        reward_2 = 1
-        reward_3 = 15
-        reward_4 = 100 # 4 in a row is a win
-        reward_num_coins = -5 # want to win faster, so penalize having more coins on the board
-        penalty_factor = 2 # penalize for opponent getting 2, 3, 4 in a row
-
-        # Create horizontal, vertical, and diagonal kernels for 2, 3, and 4 in a row
-        horizontal_2 = np.full((1, 2), 1)
-        vertical_2 = np.transpose(horizontal_2)
-        neg_diag_2 = np.eye(2, dtype=int)
-        pos_diag_2 = np.fliplr(neg_diag_2)
-        two_in_a_row = [horizontal_2, vertical_2, neg_diag_2, pos_diag_2]
-
-        horizontal_3 = np.full((1, 3), 1)
-        vertical_3 = np.transpose(horizontal_3)
-        neg_diag_3 = np.eye(3, dtype=int)
-        pos_diag_3 = np.fliplr(neg_diag_3)
-        three_in_a_row = [horizontal_3, vertical_3, neg_diag_3, pos_diag_3]
-
-        horizontal_4 = np.full((1, 4), 1)
-        vertical_4 = np.transpose(horizontal_4)
-        neg_diag_4 = np.eye(4, dtype=int)
-        pos_diag_4 = np.fliplr(neg_diag_4)
-        four_in_a_row = [horizontal_4, vertical_4, neg_diag_4, pos_diag_4]
-
-        # Positive reward for agent having coins in a row, negative reward for opponent having coins in a row
-        agent = self._player
-        if agent == P1:
+        if self.player == P1:
             opp = P2
         else:
             opp = P1
 
-        agent_moves = (board == agent)
-        opp_moves = (board == opp)
-        total_reward = 0
-
-        # Twos in a row
-        agent_twos = 0
-        opp_twos = 0
-        for pattern in two_in_a_row:
-            agent_twos += np.sum(convolve2d(agent_moves, pattern, mode="valid") == 2)
-            opp_twos += np.sum(convolve2d(opp_moves, pattern, mode="valid") == 2)
-            total_reward += reward_2 * (agent_twos - penalty_factor * opp_twos)
-
-        # Threes in a row
-        agent_threes = 0
-        opp_threes = 0
-        for pattern in three_in_a_row:
-            agent_threes += np.sum(convolve2d(agent_moves, pattern, mode="valid") == 3)
-            opp_threes += np.sum(convolve2d(opp_moves, pattern, mode="valid") == 3)
-            total_reward += reward_3 * (agent_threes - penalty_factor * opp_threes)
-
-        # Fours in a row
-        agent_fours = 0
-        opp_fours = 0
-        for pattern in four_in_a_row:
-            agent_fours += np.sum(convolve2d(agent_moves, pattern, mode="valid") == 4)
-            opp_fours += np.sum(convolve2d(opp_moves, pattern, mode="valid") == 4)
-            total_reward += reward_4 * (agent_fours - penalty_factor * opp_fours)
-
-        total_reward += reward_num_coins * np.sum(agent_moves)
-
-        return total_reward
+        if game_state == self.player:
+            return 1
+        elif game_state == DRAW:
+            return 0.5
+        elif game_state == opp:
+            return -1
+        else:
+            return 0
         
     def step(self, epsilon, playing_opponent=False):
         """Performs one timestep of the game using the agent.
@@ -232,30 +188,30 @@ class Agent:
             bool: Whether the game has finished.
         """
         if playing_opponent:
-            board = self._board.switch_teams_of_coins()
-            if self._player == P1:
+            board = self.board.switch_teams_of_coins()
+            if self.player == P1:
                 player = P2
             else:
                 player = P1
         else:
-            board = self._board.array()
-            player = self._player
+            board = self.board.array()
+            player = self.player
             
         state = np.copy(board)
-        q_values = self._q_network(state.reshape(INPUT_SHAPE)).numpy()
-        full_cols = self._board.get_full_cols()
-        action = self._choose_action(q_values, full_cols, epsilon)
+        q_values = self.q_network(state.reshape(INPUT_SHAPE)).numpy()
+        full_cols = self.board.get_full_cols()
+        action = self.choose_action(q_values, full_cols, epsilon)
 
-        self._game.move(player, action)
-        game_state = self._game.check_game_end()
+        self.game.move(player, action)
+        game_state = self.game.check_game_end()
         if playing_opponent:
-            next_state = self._board.switch_teams_of_coins()
+            next_state = self.board.switch_teams_of_coins()
         else:
-            next_state = np.copy(self._board.array())
-        reward = self._get_reward(board)
+            next_state = np.copy(self.board.array())
+        reward = self.get_reward(game_state)
         done = (game_state != ONGOING)
 
-        self._memory_buffer.append(Experience(state, action, reward, next_state, done))
+        self.memory_buffer.append(Experience(state, action, reward, next_state, done))
 
         return done
     
@@ -269,13 +225,13 @@ class Agent:
         """
         # Let TensorFlow see how the loss was calculated
         with tf.GradientTape() as tape:
-            loss = self._compute_loss(experiences, gamma)
+            loss = self.compute_loss(experiences, gamma)
         
         # Calculate gradients with respect to the Q-network's weights
-        gradients = tape.gradient(loss, self._q_network.trainable_variables)
+        gradients = tape.gradient(loss, self.q_network.trainable_variables)
         
         # Update the Q-network's weights (gradient descent: w = w - alpha * gradient)
-        self._optimizer.apply_gradients(zip(gradients, self._q_network.trainable_variables))
+        self.optimizer.apply_gradients(zip(gradients, self.q_network.trainable_variables))
 
     def num_experiences(self):
         """Returns the agent's current number of experiences.
@@ -283,7 +239,7 @@ class Agent:
         Returns:
             int: Number of experiences in the agent's memory buffer.
         """
-        return len(self._memory_buffer)
+        return len(self.memory_buffer)
     
     def sample_experiences(self):
         """Gets a sample of experiences of size MINIBATCH_SIZE from the memory buffer.
@@ -291,7 +247,7 @@ class Agent:
         Returns:
             tuple: Tuple of TensorFlow Tensors of length MINIBATCH_SIZE: states, actions, rewards, next_states, done_vals.
         """
-        experiences = random.sample(self._memory_buffer, k=MINIBATCH_SIZE)
+        experiences = random.sample(self.memory_buffer, k=BATCH_SIZE)
         states = tf.convert_to_tensor(np.array([e.state for e in experiences if e is not None]), dtype=tf.float32)
         actions = tf.convert_to_tensor(np.array([e.action for e in experiences if e is not None]), dtype=tf.float32)
         rewards = tf.convert_to_tensor(np.array([e.reward for e in experiences if e is not None]), dtype=tf.float32)

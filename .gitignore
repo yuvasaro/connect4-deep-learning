@@ -6,3 +6,6 @@ __pycache__
 
 # virtual environment
 venv
+
+# scripting to test for errors
+testing.py

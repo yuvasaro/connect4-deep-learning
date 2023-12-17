@@ -9,9 +9,21 @@ from c4.constants import *
 class Board:
     """The Connect 4 game board."""
     
-    def __init__(self):
-        """Creates a Board instance."""
-        self._board = np.zeros((M, N), dtype=int)
+    def __init__(self, array=None):
+        """Creates a Board instance.
+        
+        Args:
+            array (np.ndarray, optional): A board array to initialize this Board instance with.
+
+        Raises:
+            Exception: If the given array is not of shape (6, 7).
+        """
+        if isinstance(array, np.ndarray):
+            if array.shape != (M, N):
+                raise Exception(f"Connect 4 board must be of shape ({M}, {N}).")
+            self.board = array
+        else:
+            self.board = np.zeros((M, N), dtype=int)
 
     def array(self):
         """Gets the M by N numpy board array.
@@ -19,7 +31,15 @@ class Board:
         Returns:
             np.ndarray: The board array.
         """
-        return self._board
+        return self.board
+    
+    def copy(self):
+        """Creates a copy of this Board instance.
+
+        Returns:
+            Board: A copy of this Board instance.
+        """
+        return Board(np.copy(self.board))
 
     def valid_moves(self):
         """Gets a list of all valid moves as tuples.
@@ -29,38 +49,47 @@ class Board:
         """
         moves = []
 
-        for i in range(M):
-            for j in range(N):
-
-                if self._board[i, j] == SPACE:
-
+        for j in range(N):
+            for i in range(M):
+                if self.board[i, j] == SPACE:
                     # Either bottom row or there's a coin below
-                    if i == 0 or self._board[i - 1, j] != SPACE:
+                    if i == 0 or self.board[i - 1, j] != SPACE:
                         moves.append((i, j))
+                        break
 
         return moves
     
-    def place_coin(self, player, coords):
+    def place_coin(self, player, coords, copy=False):
         """Places a player's coin on the board.
 
         Args:
             player (int): Player 1 or 2.
             coords (tuple): Coordinates to place the coin on the board.
+            copy (bool, optional): Whether to place the coin in a copy of the board.
+
+        Returns:
+            Board: If copy=True, a copy of this Board instance with the new coin placed.
+            None: If copy=False.
         """
-        self._board[coords[0], coords[1]] = player
+        if copy:
+            copy_board = self.copy()
+            copy_board.place_coin(player, coords)
+            return copy_board
+        else:
+            self.board[coords[0], coords[1]] = player
 
     def get_coin(self, coords):
         """Returns the coin at the given coordinates.
 
         Args:
-            coords (tuple): Coordinates on the board
+            coords (tuple): Coordinates on the board.
 
         Returns:
-            int: The coin on the given coordinates
+            int: The coin on the given coordinates.
         """
         if (coords[0] < 0 or coords[0] >= M or coords[1] < 0 or coords[1] >= N):
             return -1
-        return self._board[coords[0], coords[1]]
+        return self.board[coords[0], coords[1]]
 
     def check_win(self, player):
         """Checks whether the given player has a sequence of 4 coins in a row.
@@ -81,7 +110,7 @@ class Board:
 
         for kernel in win_patterns:
             # Use convolve2d on player specific move board to check for 4 in a row
-            if (convolve2d(self._board == player, kernel, mode="valid") == 4).any():
+            if (convolve2d(self.board == player, kernel, mode="valid") == 4).any():
                 return True
         return False
     
@@ -91,7 +120,7 @@ class Board:
         Returns:
             bool: Whether the board is full.
         """
-        return not (SPACE in self._board)
+        return not (SPACE in self.board)
     
     def get_full_cols(self):
         """Returns a list of full columns in the board.
@@ -101,17 +130,17 @@ class Board:
         """
         full_cols = []
         for j in range(N):
-            if SPACE not in self._board[:, j]:
+            if SPACE not in self.board[:, j]:
                 full_cols.append(j)
         return full_cols
     
     def reset(self):
         """Resets the game board."""
-        self._board.fill(SPACE)
+        self.board.fill(SPACE)
     
     def print(self):
         """Prints the Connect 4 board to the console."""
-        print(np.flipud(self._board))
+        print(np.flipud(self.board))
 
     def switch_teams_of_coins(self):
         """Switches the teams of the coins on the board.
@@ -119,7 +148,7 @@ class Board:
         Returns:
             np.ndarray: A copy of the board with the coin teams switched.
         """
-        board = np.copy(self._board)
+        board = np.copy(self.board)
         board[board == P1] = PLACEHOLDER
         board[board == P2] = P1
         board[board == PLACEHOLDER] = P2

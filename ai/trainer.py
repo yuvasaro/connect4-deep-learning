@@ -23,19 +23,26 @@ class Trainer:
             new_model (bool, optional): Whether to create a new model instead of loading a trained one. 
                                         Defaults to False.
         """
-        if not new_model and pathlib.Path(MODEL).is_file(): # load already trained model
-            self._q_network = keras.models.load_model(MODEL)
-            self._target_q_network = keras.models.clone_model(self._q_network)
-            self._target_q_network.set_weights(self._q_network.get_weights())
-            _, _, self._optimizer = Agent.build_q_networks()
+        if not new_model and pathlib.Path(MODEL_P1).is_file() and pathlib.Path(MODEL_P2).is_file(): # load already trained model
+            self.q_network_p1 = keras.models.load_model(MODEL_P1)
+            self.target_q_network_p1 = keras.models.clone_model(self.q_network_p1)
+            self.target_q_network_p1.set_weights(self.q_network_p1.get_weights())
+
+            self.q_network_p2 = keras.models.load_model(MODEL_P2)
+            self.target_q_network_p2 = keras.models.clone_model(self.q_network_p2)
+            self.target_q_network_p2.set_weights(self.q_network_p2.get_weights())
+
+            _, _, self.optimizer = Agent.build_q_networks()
         else:
-            self._q_network, self._target_q_network, self._optimizer = Agent.build_q_networks()
+            self.q_network_p1, self.target_q_network_p1, self.optimizer = Agent.build_q_networks()
+            self.q_network_p2, self.target_q_network_p2, _ = Agent.build_q_networks()
 
-        self._game = Game()
-        self._board = self._game.board()
-        self._agent = Agent(P1, self._game, self._q_network, self._target_q_network, self._optimizer)
+        self.game = Game()
+        self.board = self.game.board
+        self.agent_p1 = Agent(P1, self.game, self.q_network_p1, self.target_q_network_p1, self.optimizer)
+        self.agent_p2 = Agent(P2, self.game, self.q_network_p2, self.target_q_network_p2, self.optimizer)
 
-    def _new_epsilon(self, epsilon):
+    def new_epsilon(self, epsilon):
         """Returns a new, lower epsilon value to use for the ε-greedy policy for choosing actions.
 
         Args:
@@ -46,7 +53,7 @@ class Trainer:
         """
         return max(E_MIN, E_DECAY * epsilon)
     
-    def _update_target_network(self, q_network, target_q_network):
+    def update_target_network(self, q_network, target_q_network):
         """Updates the target Q-network's weights with a tiny fraction of the Q-network's weights.
 
         Args:
@@ -59,35 +66,42 @@ class Trainer:
     def train(self):
         """Trains the Connect 4 deep learning model."""
         start = time.time()
-        episodes = 20000
+        episodes = 10000
         epsilon = 1.0
 
         print("Training...")
 
-        for _ in range(episodes):
+        for i in range(1, episodes + 1):
             # Reset game, get initial state
-            self._game.reset(self._agent.get_player())
+            self.game.reset(self.agent_p1.get_player())
 
             done = False
             while not done:
                 # Agent 1 move
-                done = self._agent.step(epsilon)
-                self._game.toggle_turn()
+                done = self.agent_p1.step(epsilon)
+                self.game.toggle_turn()
 
-                # Switch teams and make the same agent play as the opponent
+                # Agent 2 move
                 if not done:
-                    done = self._agent.step(epsilon, playing_opponent=True)
-                    self._game.toggle_turn()
+                    done = self.agent_p2.step(epsilon)
+                    self.game.toggle_turn()
 
-            if self._agent.num_experiences() >= MINIBATCH_SIZE:
-                agent_exp = self._agent.sample_experiences()
-                self._agent.learn(agent_exp, GAMMA)
-                self._update_target_network(self._q_network, self._target_q_network)
+            if i % 100 == 0:
+                if self.agent_p1.num_experiences() >= BATCH_SIZE:
+                    agent1_exp = self.agent_p1.sample_experiences()
+                    self.agent_p1.learn(agent1_exp, GAMMA)
+                self.update_target_network(self.q_network_p1, self.target_q_network_p1)
 
-            epsilon = self._new_epsilon(epsilon)
+                if self.agent_p2.num_experiences() >= BATCH_SIZE:
+                    agent2_exp = self.agent_p2.sample_experiences()
+                    self.agent_p2.learn(agent2_exp, GAMMA)
+                self.update_target_network(self.q_network_p2, self.target_q_network_p2)
+
+                epsilon = self.new_epsilon(epsilon)
 
         try:
-            keras.models.save_model(self._q_network, MODEL)
+            keras.models.save_model(self.q_network_p1, MODEL_P1)
+            keras.models.save_model(self.q_network_p2, MODEL_P2)
         except Exception as e:
             print(e)
 
@@ -100,7 +114,8 @@ class Trainer:
         Args:
             num_games (int): The number of games to simulate.
         """
-        model = keras.models.load_model(MODEL)
+        model_p1 = keras.models.load_model(MODEL_P1)
+        model_p2 = keras.models.load_model(MODEL_P2)
         ai_player = P1
         random_player = P2
 
@@ -111,28 +126,27 @@ class Trainer:
         print(f"Simulating {num_games} games of AI vs random...")
 
         for _ in range(num_games):
-            self._game.reset(P1)
+            self.game.reset(P1)
 
             game_state = ONGOING
             while game_state == ONGOING: # game loop
-                player = self._game.turn()
+                player = self.game.turn
 
                 if player == ai_player:
-                    if ai_player == P2:
-                        calc_board = self._board.switch_teams_of_coins()
-                    else:
-                        calc_board = self._board.array()
+                    if ai_player == P1:
+                        q_values = model_p1(self.board.array().reshape(INPUT_SHAPE)).numpy()
+                    else: # P2
+                        q_values = model_p2(self.board.array().reshape(INPUT_SHAPE)).numpy()
 
-                    q_values = model(calc_board.reshape(INPUT_SHAPE)).numpy()
-                    full_cols = self._board.get_full_cols()
+                    full_cols = self.board.get_full_cols()
                     np.put(q_values, full_cols, [-math.inf for _ in full_cols])
                     ai_move = np.argmax(q_values)
-                    self._game.move(ai_player, ai_move)
+                    self.game.move(ai_player, ai_move)
                 else:
-                    self._game.move(random_player, random.choice(self._game.valid_moves()))
+                    self.game.move(random_player, random.choice(self.game.valid_moves()))
 
-                game_state = self._game.check_game_end()
-                self._game.toggle_turn()
+                game_state = self.game.check_game_end()
+                self.game.toggle_turn()
 
             if game_state == ai_player:
                 wins += 1
