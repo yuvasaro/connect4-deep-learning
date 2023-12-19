@@ -86,18 +86,17 @@ class Trainer:
                     done = self.agent_p2.step(epsilon)
                     self.game.toggle_turn()
 
-            if i % 100 == 0:
-                if self.agent_p1.num_experiences() >= BATCH_SIZE:
-                    agent1_exp = self.agent_p1.sample_experiences()
-                    self.agent_p1.learn(agent1_exp, GAMMA)
-                self.update_target_network(self.q_network_p1, self.target_q_network_p1)
+            if self.agent_p1.num_experiences() >= BATCH_SIZE:
+                agent1_exp = self.agent_p1.sample_experiences()
+                self.agent_p1.learn(agent1_exp, GAMMA)
+            self.update_target_network(self.q_network_p1, self.target_q_network_p1)
 
-                if self.agent_p2.num_experiences() >= BATCH_SIZE:
-                    agent2_exp = self.agent_p2.sample_experiences()
-                    self.agent_p2.learn(agent2_exp, GAMMA)
-                self.update_target_network(self.q_network_p2, self.target_q_network_p2)
+            if self.agent_p2.num_experiences() >= BATCH_SIZE:
+                agent2_exp = self.agent_p2.sample_experiences()
+                self.agent_p2.learn(agent2_exp, GAMMA)
+            self.update_target_network(self.q_network_p2, self.target_q_network_p2)
 
-                epsilon = self.new_epsilon(epsilon)
+            epsilon = self.new_epsilon(epsilon)
 
         try:
             keras.models.save_model(self.q_network_p1, MODEL_P1)

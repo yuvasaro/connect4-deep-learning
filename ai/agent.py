@@ -34,9 +34,9 @@ class Agent:
             tuple: Q-network, target Q-network, optimizer.
         """
         q_network = Sequential([
-            Conv2D(64, 4, input_shape=INPUT_SHAPE[1:]),
+            Conv2D(64, 5, input_shape=INPUT_SHAPE[1:], padding="same"),
             LeakyReLU(),
-            Conv2D(64, 2, input_shape=INPUT_SHAPE[1:]),
+            Conv2D(64, 4, input_shape=INPUT_SHAPE[1:], padding="same"),
             LeakyReLU(),
             Flatten(),
             Dense(64),
@@ -47,9 +47,9 @@ class Agent:
         ])
 
         target_q_network = Sequential([
-            Conv2D(64, 4, input_shape=INPUT_SHAPE[1:]),
+            Conv2D(64, 5, input_shape=INPUT_SHAPE[1:], padding="same"),
             LeakyReLU(),
-            Conv2D(64, 2, input_shape=INPUT_SHAPE[1:]),
+            Conv2D(64, 4, input_shape=INPUT_SHAPE[1:], padding="same"),
             LeakyReLU(),
             Flatten(),
             Dense(64),
