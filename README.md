@@ -1,14 +1,5 @@
 # Connect 4 Deep Learning
 
-## Status: In Progress
-
-I am currently trying to tweak the neural network and reward system to see if I can get the AI to
-improve at the game. Currently, it can beat a random opponent (that plays random moves) around
-60-85% of the time, but doesn't seem to be that great at the game when I myself play against it.
-My own implementation of training the model using two agents that are playing against each other 
-might not be as useful as I hoped in training the model. I'm currently researching ways to
-improve the model.
-
 ## Overview
 
 This is a Connect 4 game coded in Python. It comes with a GUI that two users can use to play against
