@@ -17,14 +17,20 @@ FPS = 60
 
 # Deep reinforcement learning
 MEMORY_SIZE = 100_000     # size of memory buffer
-BATCH_SIZE = 300          # batch size
+BATCH_SIZE = 64           # batch size
 GAMMA = 0.995             # discount factor
 ALPHA = 1e-3              # learning rate  
 TAU = 1e-3                # soft update parameter
 E_DECAY = 0.995           # ε decay rate for ε-greedy policy
 E_MIN = 0.01              # minimum ε value for ε-greedy policy
-INPUT_SHAPE = (1, M, N, 1) # (1, M * N)
-BATCH_SHAPE = (BATCH_SIZE, M, N, 1) # (MINIBATCH_SIZE, M * N)
+
+# Dense-only model settings
+INPUT_SHAPE = (1, M * N)
+BATCH_SHAPE = (BATCH_SIZE, M * N)
+
+# Conv2D model settings
+# INPUT_SHAPE = (1, M, N, 1)
+# BATCH_SHAPE = (BATCH_SIZE, M, N, 1)
 
 # Model name
 MODEL_P1 = "connect4_model_p1.keras"
